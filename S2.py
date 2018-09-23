@@ -5,7 +5,7 @@ Author: GSS
 Mail: gao.hillhill@gmail.com
 Description: 
 Created Time: 7/15/2016 11:47:39 AM
-Last modified: Sat Sep 22 19:08:15 2018
+Last modified: Sun Sep 23 01:44:11 2018
 """
 
 #defaut setting for scientific caculation
@@ -23,10 +23,198 @@ from sys import exit
 import os.path
 import math
 import copy
-from Abnormals import Abnormals
+
+def bad_adc_ana ( ccs ):
+    bad_adc_ccs = []
+    for cc in ccs:
+        if cc[25] == "False" :
+            bad_adc_ccs.append(cc)
+    return bad_adc_ccs
+
+def fe900_ana ( ccs ):
+    fe900_ccs = []
+    for cc in ccs:
+        if cc[24] == "False" :
+            fe900_ccs.append(cc)
+    return fe900_ccs
+
+def stuck_ana ( ccs ):
+    stuck_ccs = []
+    for cc in ccs:
+        if float(cc[16]) > 0.95 :
+            continue
+        else:
+            ped = float(cc[10])
+            pedmod64 = ped%64
+            rms = float(cc[11])
+            sfrms = float(cc[14])
+            encratio = (rms/sfrms)  
+            fpg1 = cc[34] 
+            fpg2 = cc[44] 
+            if fpg1 != "None":
+                egain = float(fpg1) 
+                if ( egain >= 100 ) and (egain<= 180 ):
+                    pass
+                elif fpg2 != "None":
+                    egain = float(fpg2) 
+                    if ( egain >= 100 ) and (egain<= 180 ):
+                        pass
+                    else:
+                        egain = 135
+                else:
+                    egain = 135
+            else:
+                egain = 135
+            enc = rms * float(egain)
+            sfenc = sfrms * egain
+            #if ( sfenc > 400) and (( encratio > 1.5) or ( encratio < 0.5)) and ((pedmod64<60) or (pedmod64>15)):
+            if ( sfenc > 400) and (( encratio > 1.5) or ( encratio < 0.5)) :
+                stuck_ccs.append(cc)
+    return stuck_ccs
+
+def inactive_ana ( ccs ):
+    inact_fe_ccs = []
+    for cc in ccs:
+        ped = float(cc[10])
+        pp  = float(cc[17])
+        pn  = float(cc[18])
+        ppa = pp - ped
+        pna = ped-pn
+        if ( ppa < 800 ) and (pna < 300):
+            inact_fe_ccs.append(cc) 
+    return inact_fe_ccs
+
+def open_ana ( ccs, enc_thr = 350 ):
+    open_ccs = []
+    for cc in ccs:
+        rms = float(cc[11])
+        fpg1 = cc[34] 
+        fpg2 = cc[44] 
+        if fpg1 != "None":
+            egain = float(fpg1) 
+            if ( egain >= 100 ) and (egain<= 180 ):
+                pass
+            elif fpg2 != "None":
+                egain = float(fpg2) 
+                if ( egain >= 100 ) and (egain<= 180 ):
+                    pass
+                else:
+                    egain = 135
+            else:
+                egain = 135
+        else:
+            egain = 135
+        enc = rms * float(egain)
+        if (enc < enc_thr) :
+            open_ccs.append(cc) 
+    return open_ccs  
+
+def noisechn_ana ( ccs, enc_thr = 1000 ):
+    noisechn_ccs = []
+    for cc in ccs:
+        rms = float(cc[11])
+        fpg1 = cc[34] 
+        fpg2 = cc[44] 
+        if fpg1 != "None":
+            egain = float(fpg1) 
+            if ( egain >= 100 ) and (egain<= 180 ):
+                pass
+            elif fpg2 != "None":
+                egain = float(fpg2) 
+                if ( egain >= 100 ) and (egain<= 180 ):
+                    pass
+                else:
+                    egain = 135
+            else:
+                egain = 135
+        else:
+            egain = 135
+        enc = rms * float(egain)
+        if (enc > enc_thr) :
+            noisechn_ccs.append(cc) 
+    return noisechn_ccs  
+
+def wires_ana ( ccs, wire = "U" ):
+    wires_ccs = []
+    for cc in ccs:
+        if (cc[2][0] == wire):
+            wires_ccs.append(cc) 
+    return wires_ccs  
+
+def apa_ana ( ccs, apa = 1 ):
+    apa_ccs = []
+    for cc in ccs:
+        if (int(cc[0][1]) == apa):
+            apa_ccs.append(cc) 
+    return apa_ccs  
+
+def wib_ana ( apa_ccs, wib = 0 ):
+    wib_ccs = []
+    for cc in ccs:
+        if (int(cc[6]) == wib):
+            wib_ccs.append(cc) 
+    return wib_ccs  
+
+def femb_ana ( wib_ccs, femb = 0 ):
+    femb_ccs = []
+    for cc in ccs:
+        if (int(cc[7]) == femb):
+            femb_ccs.append(cc) 
+    return femb_ccs  
+
+def classify_ana (ccs):
+    bad_adc_ccs = bad_adc_ana(ccs)
+    for i in bad_adc_ccs:
+        ccs.remove(i)
+    
+    fe900_ccs = fe900_ana(ccs)
+    for i in fe900_ccs:
+        ccs.remove(i)
+    
+    stuck_ccs = stuck_ana ( ccs )
+    for i in stuck_ccs:
+        ccs.remove(i)
+                
+    inact_fe_ccs = inactive_ana(ccs)
+    for i in inact_fe_ccs:
+        ccs.remove(i)
+    
+    open_ccs = open_ana ( ccs, enc_thr = 350)
+    for i in open_ccs:
+        ccs.remove(i)
+    
+    good_ccs = ccs
+    return good_ccs, bad_adc_ccs, fe900_ccs, stuck_ccs, inact_fe_ccs, open_ccs
+
+def pnum_ana ( ccs, pnum = 0 ): #for number parameter only
+    tmp = []
+    for cc in ccs:
+        tmp.append(cc[pnum])
+    tmp = map(float, tmp)
+    return  tmp 
+
+def paras_ana (ccs):
+    peds =np.array( pnum_ana(ccs, pnum=10) )
+    rmss =np.array( pnum_ana(ccs, pnum=11) )
+    sfrmss =np.array( pnum_ana(ccs, pnum=14) )
+    pps =np.array( pnum_ana(ccs, pnum=17) ) - peds
+    pns =np.array( pnum_ana(ccs, pnum=18) ) - peds
+    fpgs =np.array( pnum_ana(ccs, pnum=32) )
+    inls =np.array( pnum_ana(ccs, pnum=33) )
+    encs = rmss * fpgs
+    sfencs = sfrmss * fpgs
+#    fpg2s = pnum_ana(ccs, pnum=42)
+#    inl2s = pnum_ana(ccs, pnum=43)
+#    fpg3s = pnum_ana(ccs, pnum=32)
+#    inl3s = pnum_ana(ccs, pnum=33)
+#    fpg4s = pnum_ana(ccs, pnum=42)
+#    inl4s = pnum_ana(ccs, pnum=43)
+    return peds, encs, sfencs, fpgs, inls, pps, pns 
+
+
 
 rpath = "/Users/shanshangao/Google_Drive_BNL/tmp/pd_tmp/statistics_csv/"
-t_pat = "Test001"
+t_pat = "Test004"
 PCE = t_pat + "_ProtoDUNE_CE_characterization" + ".csv"
 ppath = rpath + PCE
 ccs = []
@@ -40,161 +228,32 @@ with open(ppath, 'r') as fp:
         ccs.append(x)
 ccs_title = ccs[0]
 ccs = ccs[1:]
+print len(ccs)
+good_ccs, bad_adc_ccs, fe900_ccs, stuck_ccs, inact_fe_ccs, open_ccs = classify_ana (ccs)
 
-def stuck_ana ( ccs ):
-    stuck_ccs = []
+noisechn_css =  noisechn_ana( good_ccs, enc_thr = 1000 )
+
+uwire_ccs =  wires_ana ( good_ccs, wire = "U" )
+uparas =  paras_ana (uwire_ccs)
+for i in uparas:
+    print np.mean(i), np.std(i)
+
+print "XXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+vwire_ccs =  wires_ana ( good_ccs, wire = "V" )
+vparas =  paras_ana (vwire_ccs)
+for i in vparas:
+    print np.mean(i), np.std(i)
+
+print "XXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+xwire_ccs =  wires_ana ( good_ccs, wire = "X" )
+xparas =  paras_ana (xwire_ccs)
+for i in xparas:
+    print np.mean(i), np.std(i)
 
 
-runfpgs = [["09_17_2018", "01" ],  ["09_17_2018", "02" ]] #date, run_fpg_no
-BadFEs, BadADCs = Abnormals()
+print len(uwire_ccs), len(vwire_ccs), len(xwire_ccs)
+print len(noisechn_css)
+print len(ccs)
 
-index_f = "tests_index.csv"
-tindexs = []
-with open(rpath + index_f, 'r') as fp:
-    for cl in fp:
-        tmp = cl.split(",")
-        x = []
-        for i in tmp:
-            x.append(i.replace(" ", ""))
-        x = x[:-1]
-        tindexs.append(x)
-tindexs = tindexs [1:]
 
-tmp = []
-for y in tindexs:
-    if ( (int(y[13][0]) > 0) and (int(y[14][0]) > 0) and (int(y[15][0]) > 0) and \
-         (int(y[16][0]) > 0) and (int(y[17][0]) > 0) and (int(y[18][0]) > 0)  ):
-        t_pat = "Test" + format( int(y[0][1:]), "03d")
-        if "200" in y[9]:
-            bad_fe_flg = True
-        else:
-            bad_fe_flg = False
-        if "0xFF" in y[12]:
-            bad_adc_flg = True
-        else:
-            bad_adc_flg = False
-        tmp.append ([t_pat, bad_fe_flg, bad_adc_flg])
-validtests = tmp
 
-for validtest in validtests:
-    t_pat = validtest[0]
-    print t_pat + " is running"
-    bad_fe_flg = validtest[1]
-    bad_adc_flg = validtest[1]
-
-    for root, dirs, files in os.walk(rpath):
-        break
-    
-    csvfs = []
-    for f in files:
-        if ("results.csv" in f) and ( "Test" in f):
-            csvfs.append(f)
-    tfs = []
-    for f in csvfs:
-        if (t_pat in f):
-            tfs.append(rpath+f)
-    
-    pd_chns = []
-    for f in tfs:
-        with open(f, 'r') as cf:
-            l = 0
-            for cl in cf:
-                tmp = cl.split(",") 
-                chp = []
-                for i in tmp:
-                    chp.append(i.replace(" ", ""))
-                chp = chp[:-1]
-     
-                if (len(chp) > 20 ):
-                    if (l >0):
-                        pd_chns.append ( chp )
-                    else:
-                        pd_title = chp
-                l = l+1
-    
-    gainfs = []
-    for f in files:
-        if ("run01asi.csv" in f) and ( "rms" in f) and ( "fpg" in f):
-            gainfs.append(f)
-    
-    g_chns = []
-    for f in gainfs:
-        gf = rpath+ f
-        with open(gf, 'r') as gfp:
-            apano = int(f[3])
-            gdate = f[5:15]
-            grmsno = f[f.find("rms")-2: f.find("rms")]
-            gfpgno = f[f.find("fpg")-2: f.find("fpg")]
-            
-            l = 0
-            for gl in gfp:
-                tmp = gl.split(",") 
-                chp = []
-                for i in tmp:
-                    chp.append(i.replace(" ", ""))
-     
-                chp = chp[:-1]
-     
-                if (len(chp) > 5 ):
-                    if (l >0):
-                        g_chns.append ( [apano, gdate, grmsno, gfpgno, ] + chp )
-                    else:
-                        g_title = ["APA_No", "Date", "RMS no", "FPGA-DAC no", ] + chp
-                l = l+1
-    
-    goft = 4
-    ccs = []
-    ccs_title = pd_title
-    for runfpg in runfpgs:
-        ccs_title = ccs_title + ["Date", "FPGADAC no"] + g_title[goft+8: goft+16] 
-    ccs_title = ccs_title  + ["FE_Valid", "ADC_Valid"]
-    
-    i_g = 0
-    for cc in pd_chns:
-        apaloc = cc[0]
-        wibno = int(cc[6])
-        fembno = int(cc[7])
-        fembchn = int(cc[3])
-        asicno = int(cc[4])
-        for runfpg in runfpgs:
-            for gc in g_chns:
-                if (gc[goft+0] == apaloc):
-                    if (int(gc[goft+5]) == fembchn ):
-                        if (int(gc[goft+1]) == wibno ) and (int(gc[goft+2]) == fembno ) and (runfpg[0] == gc[1]) and (runfpg[1] == gc[3]) :
-                            i_g = i_g + 1
-
-                            if (bad_fe_flg):
-                                z = "APA" + apaloc[1] + "WIB" + format(wibno, "1d") + "FEMB" + format(fembno, "1d") + "FE" + format(asicno, "1d") 
-                                if ( z in BadFEs ):
-                                    if ( (float(cc[17]) - float(cc[10])) > 800 ) and ( abs(float(cc[18]) - float(cc[10])) > 300 ) :
-                                        fe_valid = True
-                                    else:
-                                        fe_valid = False
-                                else:
-                                    fe_valid = True
-                            else:
-                                fe_valid = True
-
-                            if (bad_adc_flg):
-                                z = "APA" + apaloc[1] + "WIB" + format(wibno, "1d") + "FEMB" + format(fembno, "1d") + "ADC" + format(asicno, "1d") 
-                                if ( z in BadADCs ):
-                                    adc_valid = False
-                                else:
-                                    adc_valid = True
-                            else:
-                                adc_valid = True
-
-                            cc = cc + runfpg + gc[goft+8:goft+16] 
-                            if (runfpg == runfpgs[-1] ):
-                                cc = cc  + [fe_valid, adc_valid]
-                                ccs.append(cc)
-
-    
-    PCE = t_pat + "_ProtoDUNE_CE_characterization" + ".csv"
-    with open (rpath+PCE, 'w') as fp:
-        fp.write(",".join(str(i) for i in ccs_title) +  "," + "\n")
-        for x in ccs:
-            fp.write(",".join(str(i) for i in x) +  "," + "\n")
-    print PCE
-    print "Wait for next..."
-print "Done"

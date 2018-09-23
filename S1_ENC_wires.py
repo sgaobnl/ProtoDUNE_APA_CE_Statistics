@@ -5,7 +5,7 @@ Author: GSS
 Mail: gao.hillhill@gmail.com
 Description: 
 Created Time: 7/15/2016 11:47:39 AM
-Last modified: Sat Sep 22 18:27:50 2018
+Last modified: Sun Sep 23 10:06:09 2018
 """
 
 #defaut setting for scientific caculation
@@ -26,7 +26,14 @@ import copy
 from Abnormals import Abnormals
 
 #t_pat = "Test001"
-runfpgs = [["09_17_2018", "01" ],  ["09_17_2018", "02" ]] #date, run_fpg_no
+#             [  "09_23_2018_run03rms_run03fpg_run01asi.csv",\ #200mV
+#                "09_23_2018_run03rms_run02fpg_run01asi.csv",\ #900mV
+#                "09_23_2018_run02rms_run01fpg_run01asi.csv",\ #200mV, 0xFF0xFF
+#                "09_17_2018_run01rms_run01fpg_run01asi.csv",\ #200mV, 0xFF0xFF
+#                "09_17_2018_run02rms_run02fpg_run01asi.csv",\ #900mV, 0xFF0xFF
+#                ] 
+
+runfpgs = [["09_23_2018", "03" ],  ["09_23_2018", "02" ],  ["09_23_2018", "01" ],  ["09_17_2018", "01" ],  ["09_17_2018", "02" ]] #date, run_fpg_no
 BadFEs, BadADCs = Abnormals()
 rpath = "/Users/shanshangao/Google_Drive_BNL/tmp/pd_tmp/statistics_csv/"
 
@@ -45,7 +52,7 @@ tindexs = tindexs [1:]
 tmp = []
 for y in tindexs:
     if ( (int(y[13][0]) > 0) and (int(y[14][0]) > 0) and (int(y[15][0]) > 0) and \
-         (int(y[16][0]) > 0) and (int(y[17][0]) > 0) and (int(y[18][0]) > 0)  ):
+         (int(y[16][0]) > 0) and (int(y[17][0]) > 0) and (int(y[18][0]) > 0)  ) and (y[0] == "#23"):
         t_pat = "Test" + format( int(y[0][1:]), "03d")
         if "200" in y[9]:
             bad_fe_flg = True
@@ -59,6 +66,8 @@ for y in tindexs:
 validtests = tmp
 
 for validtest in validtests:
+#for validtest in [["Test004", True, True]]:
+    print validtest
     t_pat = validtest[0]
     print t_pat + " is running"
     bad_fe_flg = validtest[1]
@@ -98,7 +107,6 @@ for validtest in validtests:
     for f in files:
         if ("run01asi.csv" in f) and ( "rms" in f) and ( "fpg" in f):
             gainfs.append(f)
-    
     g_chns = []
     for f in gainfs:
         gf = rpath+ f
@@ -127,9 +135,9 @@ for validtest in validtests:
     goft = 4
     ccs = []
     ccs_title = pd_title
+    ccs_title = ccs_title  + ["FE_Valid", "ADC_Valid"]
     for runfpg in runfpgs:
         ccs_title = ccs_title + ["Date", "FPGADAC no"] + g_title[goft+8: goft+16] 
-    ccs_title = ccs_title  + ["FE_Valid", "ADC_Valid"]
     
     i_g = 0
     for cc in pd_chns:
@@ -137,40 +145,61 @@ for validtest in validtests:
         wibno = int(cc[6])
         fembno = int(cc[7])
         fembchn = int(cc[3])
-        asicno = int(cc[4])
+        asicno = int(cc[8])
+        print asicno
+
+        if (bad_fe_flg):
+            z = "APA" + apaloc[1] + "WIB" + format(wibno, "1d") + "FEMB" + format(fembno, "1d") + "FE" + format(asicno, "1d") 
+            if ( z in BadFEs ):
+                if ( (float(cc[17]) - float(cc[10])) > 800 ) and ( abs(float(cc[18]) - float(cc[10])) > 300 ) :
+                    fe_valid = True
+                else:
+                    fe_valid = False
+            else:
+                fe_valid = True
+        else:
+            fe_valid = True
+        if (bad_adc_flg):
+            z = "APA" + apaloc[1] + "WIB" + format(wibno, "1d") + "FEMB" + format(fembno, "1d") + "ADC" + format(asicno, "1d") 
+            if ( z in BadADCs ):
+                adc_valid = False
+            else:
+                adc_valid = True
+        else:
+            adc_valid = True
+        cc = cc  + [fe_valid, adc_valid]
+
         for runfpg in runfpgs:
             for gc in g_chns:
                 if (gc[goft+0] == apaloc):
                     if (int(gc[goft+5]) == fembchn ):
                         if (int(gc[goft+1]) == wibno ) and (int(gc[goft+2]) == fembno ) and (runfpg[0] == gc[1]) and (runfpg[1] == gc[3]) :
                             i_g = i_g + 1
-
-                            if (bad_fe_flg):
-                                z = "APA" + apaloc[1] + "WIB" + format(wibno, "1d") + "FEMB" + format(fembno, "1d") + "FE" + format(asicno, "1d") 
-                                if ( z in BadFEs ):
-                                    if ( (float(cc[17]) - float(cc[10])) > 800 ) and ( abs(float(cc[18]) - float(cc[10])) > 300 ) :
-                                        fe_valid = True
-                                    else:
-                                        fe_valid = False
-                                else:
-                                    fe_valid = True
-                            else:
-                                fe_valid = True
-
-                            if (bad_adc_flg):
-                                z = "APA" + apaloc[1] + "WIB" + format(wibno, "1d") + "FEMB" + format(fembno, "1d") + "ADC" + format(asicno, "1d") 
-                                if ( z in BadADCs ):
-                                    adc_valid = False
-                                else:
-                                    adc_valid = True
-                            else:
-                                adc_valid = True
-
                             cc = cc + runfpg + gc[goft+8:goft+16] 
                             if (runfpg == runfpgs[-1] ):
-                                cc = cc  + [fe_valid, adc_valid]
+                                z = "APA" + apaloc[1] + "WIB" + format(wibno, "1d") + "FEMB" + format(fembno, "1d") + "ADC" + format(asicno, "1d") 
+                                if (( z in BadFEs ) and (bad_fe_flg) ) :
+                                    cc[24+2] = cc[34+2]
+                                    cc[25+2] = cc[35+2]
+                                    cc[26+2] = cc[36+2]
+                                    cc[27+2] = cc[37+2]
+                                    cc[28+2] = cc[38+2]
+                                    cc[29+2] = cc[39+2]
+                                    cc[30+2] = cc[40+2]
+                                    cc[31+2] = cc[41+2]
+                                    cc[32+2] = cc[42+2]
+                                    cc[33+2] = cc[43+2]
+#                                y = "APA" + apaloc[1] + "WIB" + format(wibno, "1d") + "FEMB" + format(fembno, "1d") + "ADC" + format(asicno, "1d") 
+#                                if (( y in BadFEs ) and (bad_adc_flg) ) :
+#                                    cc[32] = 135
+#                                    cc[33] = 0
+#                                    cc[42] = 135
+#                                    cc[43] = 0
                                 ccs.append(cc)
-
+#        print len(ccs[0])
+#        for i in range(len(ccs[0])):
+#            print ccs_title[i],ccs[0][i] 
+#        exit()
     
     PCE = t_pat + "_ProtoDUNE_CE_characterization" + ".csv"
     with open (rpath+PCE, 'w') as fp:
