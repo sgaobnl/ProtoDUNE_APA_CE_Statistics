@@ -5,7 +5,7 @@ Author: GSS
 Mail: gao.hillhill@gmail.com
 Description: 
 Created Time: 7/15/2016 11:47:39 AM
-Last modified: Sun Sep 23 01:44:11 2018
+Last modified: Sun Sep 23 11:20:25 2018
 """
 
 #defaut setting for scientific caculation
@@ -109,6 +109,69 @@ def open_ana ( ccs, enc_thr = 350 ):
             open_ccs.append(cc) 
     return open_ccs  
 
+def none_gain_ana ( ccs ):
+    none_gain_ccs = []
+    for cc in ccs:
+        fpg = cc[34] 
+        if fpg == "None":
+            none_gain_ccs.append(cc)
+    return none_gain_ccs
+ 
+def big_gain_ana ( ccs, gainmax = 180 ):
+    big_gain_ccs = []
+    for cc in ccs:
+        fpg = cc[34] 
+        if fpg != "None":
+            if ( float(fpg) > 180 ):
+                big_gain_ccs.append(cc)
+    return big_gain_ccs
+ 
+def small_gain_ana ( ccs, gainmin = 100 ):
+    small_gain_ccs = []
+    for cc in ccs:
+        fpg = cc[34] 
+        if fpg != "None":
+            if ( float(fpg) < 100 ):
+                small_gain_ccs.append(cc)
+    return small_gain_ccs
+
+def classify_ana (ccs):
+    bad_adc_ccs = bad_adc_ana(ccs)
+    for i in bad_adc_ccs:
+        ccs.remove(i)
+    
+    fe900_ccs = fe900_ana(ccs)
+    for i in fe900_ccs:
+        ccs.remove(i)
+    
+    stuck_ccs = stuck_ana ( ccs )
+    for i in stuck_ccs:
+        ccs.remove(i)
+                
+    inact_fe_ccs = inactive_ana(ccs)
+    for i in inact_fe_ccs:
+        ccs.remove(i)
+    
+    open_ccs = open_ana ( ccs, enc_thr = 350)
+    for i in open_ccs:
+        ccs.remove(i)
+
+    none_gain_ccs = none_gain_ana ( ccs)
+    for i in none_gain_ccs:
+        ccs.remove(i)
+
+    big_gain_ccs = big_gain_ana (ccs, gainmax = 180)
+    for i in big_gain_ccs:
+        ccs.remove(i)
+ 
+    small_gain_ccs = small_gain_ana (ccs, gainmin = 100)
+    for i in small_gain_ccs:
+        ccs.remove(i)
+   
+    good_ccs = ccs
+    return good_ccs, bad_adc_ccs, fe900_ccs, stuck_ccs, inact_fe_ccs, open_ccs, none_gain_ccs, big_gain_ccs, small_gain_ccs
+
+
 def noisechn_ana ( ccs, enc_thr = 1000 ):
     noisechn_ccs = []
     for cc in ccs:
@@ -162,30 +225,6 @@ def femb_ana ( wib_ccs, femb = 0 ):
             femb_ccs.append(cc) 
     return femb_ccs  
 
-def classify_ana (ccs):
-    bad_adc_ccs = bad_adc_ana(ccs)
-    for i in bad_adc_ccs:
-        ccs.remove(i)
-    
-    fe900_ccs = fe900_ana(ccs)
-    for i in fe900_ccs:
-        ccs.remove(i)
-    
-    stuck_ccs = stuck_ana ( ccs )
-    for i in stuck_ccs:
-        ccs.remove(i)
-                
-    inact_fe_ccs = inactive_ana(ccs)
-    for i in inact_fe_ccs:
-        ccs.remove(i)
-    
-    open_ccs = open_ana ( ccs, enc_thr = 350)
-    for i in open_ccs:
-        ccs.remove(i)
-    
-    good_ccs = ccs
-    return good_ccs, bad_adc_ccs, fe900_ccs, stuck_ccs, inact_fe_ccs, open_ccs
-
 def pnum_ana ( ccs, pnum = 0 ): #for number parameter only
     tmp = []
     for cc in ccs:
@@ -199,22 +238,16 @@ def paras_ana (ccs):
     sfrmss =np.array( pnum_ana(ccs, pnum=14) )
     pps =np.array( pnum_ana(ccs, pnum=17) ) - peds
     pns =np.array( pnum_ana(ccs, pnum=18) ) - peds
-    fpgs =np.array( pnum_ana(ccs, pnum=32) )
-    inls =np.array( pnum_ana(ccs, pnum=33) )
+    fpgs =np.array( pnum_ana(ccs, pnum=34) )
+    inls =np.array( pnum_ana(ccs, pnum=35) )
     encs = rmss * fpgs
     sfencs = sfrmss * fpgs
-#    fpg2s = pnum_ana(ccs, pnum=42)
-#    inl2s = pnum_ana(ccs, pnum=43)
-#    fpg3s = pnum_ana(ccs, pnum=32)
-#    inl3s = pnum_ana(ccs, pnum=33)
-#    fpg4s = pnum_ana(ccs, pnum=42)
-#    inl4s = pnum_ana(ccs, pnum=43)
     return peds, encs, sfencs, fpgs, inls, pps, pns 
 
 
 
-rpath = "/Users/shanshangao/Google_Drive_BNL/tmp/pd_tmp/statistics_csv/"
-t_pat = "Test004"
+rpath = "/Users/shanshangao/Google_Drive_BNL/tmp/pd_tmp/test_statis/"
+t_pat = "Test008"
 PCE = t_pat + "_ProtoDUNE_CE_characterization" + ".csv"
 ppath = rpath + PCE
 ccs = []
@@ -229,7 +262,7 @@ with open(ppath, 'r') as fp:
 ccs_title = ccs[0]
 ccs = ccs[1:]
 print len(ccs)
-good_ccs, bad_adc_ccs, fe900_ccs, stuck_ccs, inact_fe_ccs, open_ccs = classify_ana (ccs)
+good_ccs, bad_adc_ccs, fe900_ccs, stuck_ccs, inact_fe_ccs, open_ccs, none_gain_ccs, big_gain_ccs, small_gain_ccs = classify_ana (ccs)
 
 noisechn_css =  noisechn_ana( good_ccs, enc_thr = 1000 )
 

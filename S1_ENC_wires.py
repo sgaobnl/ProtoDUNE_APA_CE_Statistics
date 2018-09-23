@@ -5,7 +5,7 @@ Author: GSS
 Mail: gao.hillhill@gmail.com
 Description: 
 Created Time: 7/15/2016 11:47:39 AM
-Last modified: Sun Sep 23 10:06:09 2018
+Last modified: Sun Sep 23 11:32:49 2018
 """
 
 #defaut setting for scientific caculation
@@ -146,7 +146,6 @@ for validtest in validtests:
         fembno = int(cc[7])
         fembchn = int(cc[3])
         asicno = int(cc[8])
-        print asicno
 
         if (bad_fe_flg):
             z = "APA" + apaloc[1] + "WIB" + format(wibno, "1d") + "FEMB" + format(fembno, "1d") + "FE" + format(asicno, "1d") 
@@ -177,8 +176,8 @@ for validtest in validtests:
                             i_g = i_g + 1
                             cc = cc + runfpg + gc[goft+8:goft+16] 
                             if (runfpg == runfpgs[-1] ):
-                                z = "APA" + apaloc[1] + "WIB" + format(wibno, "1d") + "FEMB" + format(fembno, "1d") + "ADC" + format(asicno, "1d") 
-                                if (( z in BadFEs ) and (bad_fe_flg) ) :
+                                z = "APA" + apaloc[1] + "WIB" + format(wibno, "1d") + "FEMB" + format(fembno, "1d") + "FE" + format(asicno, "1d") 
+                                if ( z in BadFEs )  :
                                     cc[24+2] = cc[34+2]
                                     cc[25+2] = cc[35+2]
                                     cc[26+2] = cc[36+2]
@@ -189,17 +188,7 @@ for validtest in validtests:
                                     cc[31+2] = cc[41+2]
                                     cc[32+2] = cc[42+2]
                                     cc[33+2] = cc[43+2]
-#                                y = "APA" + apaloc[1] + "WIB" + format(wibno, "1d") + "FEMB" + format(fembno, "1d") + "ADC" + format(asicno, "1d") 
-#                                if (( y in BadFEs ) and (bad_adc_flg) ) :
-#                                    cc[32] = 135
-#                                    cc[33] = 0
-#                                    cc[42] = 135
-#                                    cc[43] = 0
                                 ccs.append(cc)
-#        print len(ccs[0])
-#        for i in range(len(ccs[0])):
-#            print ccs_title[i],ccs[0][i] 
-#        exit()
     
     PCE = t_pat + "_ProtoDUNE_CE_characterization" + ".csv"
     with open (rpath+PCE, 'w') as fp:
