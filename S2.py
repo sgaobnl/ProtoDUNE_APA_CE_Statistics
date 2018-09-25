@@ -5,7 +5,7 @@ Author: GSS
 Mail: gao.hillhill@gmail.com
 Description: 
 Created Time: 7/15/2016 11:47:39 AM
-Last modified: Mon Sep 24 16:09:04 2018
+Last modified: Tue Sep 25 11:01:42 2018
 """
 
 #defaut setting for scientific caculation
@@ -302,72 +302,70 @@ if (True):
     print len (good_ccs        ) 
     print "XXXXXXXXXXXXXXXXXXXXXXXX"  
 
-###########export results ###################
-i = ccs_title 
-b =  [i[0], i[1],i[2], i[6], i[7], i[8], i[9], i[21], i[22], i[10], "ENC \ e-", i[11], i[14],  i[16], "Pulse Postive Amplitude",  "Pulse Negative Amplitude", i[34], i[35], "Code", "Code Description"]
-c =[b] #set title
+############export results ###################
+#i = ccs_title 
+#b =  [i[0], i[1],i[2], i[6], i[7], i[8], i[9], i[21], i[22], i[10], "ENC \ e-", i[11], i[14],  i[16], "Pulse Postive Amplitude",  "Pulse Negative Amplitude", i[34], i[35], "Code", "Code Description"]
+#c =[b] #set title
+#
+#all_ccs = [
+#    [bad_adc_ccs   , "C01", "ADC Sync Phase Error "],
+#    [fe900_ccs     , "C02", "Inactive FE ASIC"],
+#    [inact_fe_ccs  , "C03", "Inactive FE Channels "],
+#    [none_gain_ccs , "C04", "FE channels fails calibration"],
+#    [big_gain_ccs  , "C05", "Inverted Gain > 180 e-/bin "],
+#    [small_gain_ccs, "C06", "Inverted Gain < 90 e-/bin"],
+#    [stuck_ccs     , "C07", "Channels with signifcant stuck bit"],
+#    [open_ccs      , "C08", "Broken connection pre FE input"],
+#    [noisechn2k_ccs, "C09", "ENC > 2000e-"],
+#    [noisechn1k_ccs, "C10", "1000e- < ENC <= 2000 e- "],
+#    [noisechn8h_ccs, "C11", "800e- < ENC <= 1000 e-  "],
+#    [good_ccs      , "C12", "Good"],
+#    ]
+#
+#for ccs_x in all_ccs:
+#    for i in ccs_x[0]:
+#        b =  [i[0], i[1],i[2], i[6], i[7], i[8], i[9], i[21], i[22], i[10], int(float(i[11])*float(i[34])),  i[11], i[14], i[16], str(float(i[17])-float(i[10])),  str(float(i[18])-float(i[10])), i[34], i[35], ccs_x[1], ccs_x[2],]
+#        c.append(b)
+#
+#rfile =  rpath + PCE[0:-4] + "_summary" + ".csv"
+#print rfile
+#with open (rfile, 'w') as fp:
+#    for x in c:
+#        fp.write(",".join(str(i) for i in x) +  "," + "\n")
+#
+############export results end ###################
 
-all_ccs = [
-    [bad_adc_ccs   , "C01", "ADC Sync Phase Error "],
-    [fe900_ccs     , "C02", "Inactive FE ASIC"],
-    [inact_fe_ccs  , "C03", "Inactive FE Channels "],
-    [none_gain_ccs , "C04", "FE channels fails calibration"],
-    [big_gain_ccs  , "C05", "Inverted Gain > 180 e-/bin "],
-    [small_gain_ccs, "C06", "Inverted Gain < 90 e-/bin"],
-    [stuck_ccs     , "C07", "Channels with signifcant stuck bit"],
-    [open_ccs      , "C08", "Broken connection pre FE input"],
-    [noisechn2k_ccs, "C09", "ENC > 2000e-"],
-    [noisechn1k_ccs, "C10", "1000e- < ENC <= 2000 e- "],
-    [noisechn8h_ccs, "C11", "800e- < ENC <= 1000 e-  "],
-    [good_ccs      , "C12", "Good"],
-    ]
 
-for ccs_x in all_ccs:
-    for i in ccs_x[0]:
-        b =  [i[0], i[1],i[2], i[6], i[7], i[8], i[9], i[21], i[22], i[10], int(float(i[11])*float(i[34])),  i[11], i[14], i[16], str(float(i[17])-float(i[10])),  str(float(i[18])-float(i[10])), i[34], i[35], ccs_x[1], ccs_x[2],]
-        c.append(b)
-
-rfile =  rpath + PCE[0:-4] + "_summary" + ".csv"
-print rfile
-with open (rfile, 'w') as fp:
-    for x in c:
-        fp.write(",".join(str(i) for i in x) +  "," + "\n")
-
-###########export results end ###################
-
-
-#for i in inact_fe_ccs:
-#    print i[0:14]
-
-uwire_ccs =  wires_ana ( good_ccs, wire = "U" )
-uparas =  paras_ana (uwire_ccs)
-
-vwire_ccs =  wires_ana ( good_ccs, wire = "V" )
-vparas =  paras_ana (vwire_ccs)
-
-xwire_ccs =  wires_ana ( good_ccs, wire = "X" )
-xparas =  paras_ana (xwire_ccs)
-
-unoise2k_ccs =  wires_ana ( noisechn2k_ccs , wire = "U" )
-unoise2kparas =  paras_ana (unoise2k_ccs)
-unoise1k_ccs =  wires_ana ( noisechn1k_ccs , wire = "U" )
-unoise1kparas =  paras_ana (unoise1k_ccs)
-unoise8h_ccs =  wires_ana ( noisechn8h_ccs , wire = "U" )
-unoise8hparas =  paras_ana (unoise8h_ccs)
-
-vnoise2k_ccs =  wires_ana ( noisechn2k_ccs , wire = "X" )
-vnoise2kparas =  paras_ana (vnoise2k_ccs)
-vnoise1k_ccs =  wires_ana ( noisechn1k_ccs , wire = "V" )
-vnoise1kparas =  paras_ana ( vnoise1k_ccs)
-vnoise8h_ccs =  wires_ana ( noisechn8h_ccs , wire = "V" )
-vnoise8hparas =  paras_ana (vnoise8h_ccs)
-
-xnoise2k_ccs =  wires_ana ( noisechn2k_ccs , wire = "X" )
-xnoise2kparas =  paras_ana (xnoise2k_ccs)
-xnoise1k_ccs =  wires_ana ( noisechn1k_ccs , wire = "X" )
-xnoise1kparas =  paras_ana ( xnoise1k_ccs)
-xnoise8h_ccs =  wires_ana ( noisechn8h_ccs , wire = "X" )
-xnoise8hparas =  paras_ana (xnoise8h_ccs)
+##############Make histogram plot
+#uwire_ccs =  wires_ana ( good_ccs, wire = "U" )
+#uparas =  paras_ana (uwire_ccs)
+#
+#vwire_ccs =  wires_ana ( good_ccs, wire = "V" )
+#vparas =  paras_ana (vwire_ccs)
+#
+#xwire_ccs =  wires_ana ( good_ccs, wire = "X" )
+#xparas =  paras_ana (xwire_ccs)
+#
+#unoise2k_ccs =  wires_ana ( noisechn2k_ccs , wire = "U" )
+#unoise2kparas =  paras_ana (unoise2k_ccs)
+#unoise1k_ccs =  wires_ana ( noisechn1k_ccs , wire = "U" )
+#unoise1kparas =  paras_ana (unoise1k_ccs)
+#unoise8h_ccs =  wires_ana ( noisechn8h_ccs , wire = "U" )
+#unoise8hparas =  paras_ana (unoise8h_ccs)
+#
+#vnoise2k_ccs =  wires_ana ( noisechn2k_ccs , wire = "X" )
+#vnoise2kparas =  paras_ana (vnoise2k_ccs)
+#vnoise1k_ccs =  wires_ana ( noisechn1k_ccs , wire = "V" )
+#vnoise1kparas =  paras_ana ( vnoise1k_ccs)
+#vnoise8h_ccs =  wires_ana ( noisechn8h_ccs , wire = "V" )
+#vnoise8hparas =  paras_ana (vnoise8h_ccs)
+#
+#xnoise2k_ccs =  wires_ana ( noisechn2k_ccs , wire = "X" )
+#xnoise2kparas =  paras_ana (xnoise2k_ccs)
+#xnoise1k_ccs =  wires_ana ( noisechn1k_ccs , wire = "X" )
+#xnoise1kparas =  paras_ana ( xnoise1k_ccs)
+#xnoise8h_ccs =  wires_ana ( noisechn8h_ccs , wire = "X" )
+#xnoise8hparas =  paras_ana (xnoise8h_ccs)
 
 
 #import matplotlib.pyplot as plt
@@ -536,3 +534,4 @@ xnoise8hparas =  paras_ana (xnoise8h_ccs)
 #plt.savefig("./abc.png")
 #plt.close()
 
+##############Make histogram plot
