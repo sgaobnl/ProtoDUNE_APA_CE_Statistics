@@ -5,7 +5,7 @@ Author: GSS
 Mail: gao.hillhill@gmail.com
 Description: 
 Created Time: 7/15/2016 11:47:39 AM
-Last modified: Tue Sep 25 11:01:42 2018
+Last modified: Tue Sep 25 16:49:38 2018
 """
 
 #defaut setting for scientific caculation
@@ -270,11 +270,9 @@ with open(ppath, 'r') as fp:
         ccs.append(x)
 ccs_title = ccs[0]
 ccs = ccs[1:]
-#print len(ccs)
 
 good_ccs, bad_adc_ccs, fe900_ccs, inact_fe_ccs, none_gain_ccs, big_gain_ccs, small_gain_ccs, stuck_ccs, open_ccs = good_classify_ana (ccs)
 
-#if (False):
 if (True):
     noisechn2k_ccs =  noisechn_ana( good_ccs, enc_up = 100000, enc_down = 2000)
     for i in noisechn2k_ccs:
@@ -302,24 +300,140 @@ if (True):
     print len (good_ccs        ) 
     print "XXXXXXXXXXXXXXXXXXXXXXXX"  
 
+###########export results ###################
+i = ccs_title 
+c =[["APA no", "Wire", "APA wire no"] + i]
+all_ccs = [
+    [bad_adc_ccs   , "C01", "ADC Sync Phase Error "],                               
+    [fe900_ccs     , "C02", "Inactive FE ASIC"],                               
+    [inact_fe_ccs  , "C03", "Inactive FE Channels "],                               
+    [none_gain_ccs , "C04", "FE channels fails calibration"],                               
+    [big_gain_ccs  , "C05", "Inverted Gain > 180 e-/bin "],                               
+    [small_gain_ccs, "C06", "Inverted Gain < 90 e-/bin"],                               
+    [stuck_ccs     , "C07", "Channels with signifcant stuck bit"],                               
+    [open_ccs      , "C08", "Broken connection pre FE input"],                               
+    [noisechn2k_ccs, "C09", "ENC > 2000e-"],                               
+    [noisechn1k_ccs, "C10", "1000e- < ENC <= 2000 e- "],
+    [noisechn8h_ccs, "C11", "800e- < ENC <= 1000 e-  "],
+    [good_ccs      , "C12", "Good"],                                 
+    ]
+
+for ccs_x in all_ccs:
+    for i in ccs_x[0]:
+        apa_side = (i[0][0])
+        apano = int(i[0][1])
+        fembloc = int(i[0][2:4])
+        wire_type = i[2][0]
+        fembwire_no = int(i[2][1:3])
+        #set B01 X(U/V)#01 as start, clock-wise wire number
+        if (wire_type == "X" ):
+            w_femb = 48
+        else:
+            w_femb = 40
+        apawireno = ( fembloc -1 ) * w_femb + (w_femb-fembwire_no) + 1
+        apawireinfo = [apano, wire_type , apawireno]
+        b = apawireinfo + i +  [ccs_x[1], ccs_x[2],]
+        c.append(b)
+
+apa_ccs_title = c[1]
+apa_ccs = c[1:]
+
+def wires_sorted ( apa_ccs, apano = 1, wiretype = "U" ):
+    wires_ccs = []
+    for cc in apa_ccs:
+        if (cc[0] == apano) and (cc[1] == wiretype):
+            x = [cc[0], cc[1], cc[2], int(float(cc[14])*float(cc[37])), int(float(cc[17])*float(cc[37])), cc[-2] ]
+            wires_ccs.append(x) 
+    #wires_css = sorted(wires_ccs, key= lambda i : int(i[2]))
+    wires_ccs = sorted(wires_ccs, key= lambda i : i[2])
+    return wires_ccs  
+
+def rms_dis_plot(wt, clfys, direct = 1 ):
+    fig = plt.figure(figsize=(12,6))
+    lenwt = len(wt)
+    lenwth = lenwt//2
+    if direct == 1: #0~400
+        x_range = range(lenwth)
+        plt.xlim([1,lenwth+1])
+    elif direct == 2:#400 --> 800
+        x_range = range(lenwth, lenwt)
+        plt.xlim([lenwth + 1,lenwt+1])
+    elif direct == 3:#400 --> 1
+        x_range = range(lenwth)
+        plt.xlim([lenwth+1,1])
+    elif direct == 4:#800 --> 400
+        x_range = range(lenwth, lenwt)
+        plt.xlim([lenwt + 1,lenwth+1])
+ 
+    for i in x_range: 
+        for x in clfys:
+            if wt[i][5] in x[0]:
+                plt.bar([wt[i][2]], [wt[i][3]], color = x[1], width = 1)
+    plt.ylim([0,2000])
+
+    if x_range[0] > x_range[-1]:
+        x_pos = x_range[0] - 200
+    else:
+        x_pos = x_range[0] + 200
+    plt.text (x_pos+200, 1900, "$\\blacksquare$: %s"%clfys[0][2], color = clfys[0][1], fontsize=16 )
+    plt.text (x_pos+200, 1800, "$\\blacksquare$: %s"%clfys[1][2], color = clfys[1][1], fontsize=16 )
+    plt.text (x_pos+200, 1700, "$\\blacksquare$: %s"%clfys[2][2], color = clfys[2][1], fontsize=16 )
+    plt.text (x_pos+200, 1600, "$\\blacksquare$: %s"%clfys[3][2], color = clfys[3][1], fontsize=16 )
+    plt.text (x_pos+200, 1500, "$\\blacksquare$: %s"%clfys[4][2], color = clfys[4][1], fontsize=16 )
+    plt.title( "%s Plane of APA%d"%(wiretype, apano), fontsize = 20)
+    plt.xlabel( "APA Channel Num", fontsize = 20)
+    plt.ylabel( "ENC / e$^-$", fontsize = 20)
+    plt.tick_params(labelsize=20)
+    plt.grid()
+    plt.tight_layout( rect=[0.05, 0.05, 0.95, 0.95])
+    plt.savefig("/Users/shanshangao/Google_Drive_BNL/tmp/pd_tmp/plots/%s_%s_Plane_of_APA%d_direct%d.png"%(t_pat, wiretype, apano, direct))
+    plt.close()
+
+
+import matplotlib.pyplot as plt
+for apano in range(1,4,1):
+    for wiretype in ["U", "V", "X"]:
+        wt = wires_sorted ( apa_ccs, apano = apano, wiretype = wiretype)
+        clfys =  [[ ["C01","C02","C03","C04","C05","C06"], "m", "Inactive"],
+                    [["C07"], "b", "Sticky"],
+                    [["C08"], "purple", "Open"],
+                    [["C09", "C10", "C11"],"r", "ENC > 800e$^-$"],
+                    [["C12"], "g", "ENC <= 800e$^-$"] ]
+ 
+        rms_dis_plot(wt, clfys, direct = 1 )
+        rms_dis_plot(wt, clfys, direct = 4 )
+        
+for apano in range(4,7,1):
+    for wiretype in ["U", "V", "X"]:
+        wt = wires_sorted ( apa_ccs, apano = apano, wiretype = wiretype)
+        clfys =  [[ ["C01","C02","C03","C04","C05","C06"], "m", "Inactive"],
+                    [["C07"], "b", "Sticky"],
+                    [["C08"], "purple", "Open"],
+                    [["C09", "C10", "C11"],"r", "ENC > 800e$^-$"],
+                    [["C12"], "g", "ENC <= 800e$^-$"] ]
+ 
+        rms_dis_plot(wt, clfys, direct = 2 )
+        rms_dis_plot(wt, clfys, direct = 3 )
+
+
 ############export results ###################
 #i = ccs_title 
 #b =  [i[0], i[1],i[2], i[6], i[7], i[8], i[9], i[21], i[22], i[10], "ENC \ e-", i[11], i[14],  i[16], "Pulse Postive Amplitude",  "Pulse Negative Amplitude", i[34], i[35], "Code", "Code Description"]
 #c =[b] #set title
 #
 #all_ccs = [
-#    [bad_adc_ccs   , "C01", "ADC Sync Phase Error "],
-#    [fe900_ccs     , "C02", "Inactive FE ASIC"],
-#    [inact_fe_ccs  , "C03", "Inactive FE Channels "],
-#    [none_gain_ccs , "C04", "FE channels fails calibration"],
-#    [big_gain_ccs  , "C05", "Inverted Gain > 180 e-/bin "],
-#    [small_gain_ccs, "C06", "Inverted Gain < 90 e-/bin"],
-#    [stuck_ccs     , "C07", "Channels with signifcant stuck bit"],
-#    [open_ccs      , "C08", "Broken connection pre FE input"],
-#    [noisechn2k_ccs, "C09", "ENC > 2000e-"],
+#    [bad_adc_ccs   , "C01", "ADC Sync Phase Error "],                               
+#    [fe900_ccs     , "C02", "Inactive FE ASIC"],                               
+#    [inact_fe_ccs  , "C03", "Inactive FE Channels "],                               
+#    [none_gain_ccs , "C04", "FE channels fails calibration"],                               
+#    [big_gain_ccs  , "C05", "Inverted Gain > 180 e-/bin "],                               
+#    [small_gain_ccs, "C06", "Inverted Gain < 90 e-/bin"],                               
+#    [stuck_ccs     , "C07", "Channels with signifcant stuck bit"],                               
+#    [open_ccs      , "C08", "Broken connection pre FE input"],                               
+#    [noisechn2k_ccs, "C09", "ENC > 2000e-"],                               
 #    [noisechn1k_ccs, "C10", "1000e- < ENC <= 2000 e- "],
 #    [noisechn8h_ccs, "C11", "800e- < ENC <= 1000 e-  "],
-#    [good_ccs      , "C12", "Good"],
+#    [good_ccs      , "C12", "Good"],                                 
 #    ]
 #
 #for ccs_x in all_ccs:
