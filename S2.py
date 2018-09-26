@@ -5,7 +5,7 @@ Author: GSS
 Mail: gao.hillhill@gmail.com
 Description: 
 Created Time: 7/15/2016 11:47:39 AM
-Last modified: Tue Sep 25 16:49:38 2018
+Last modified: Tue Sep 25 17:36:00 2018
 """
 
 #defaut setting for scientific caculation
@@ -342,7 +342,7 @@ def wires_sorted ( apa_ccs, apano = 1, wiretype = "U" ):
     wires_ccs = []
     for cc in apa_ccs:
         if (cc[0] == apano) and (cc[1] == wiretype):
-            x = [cc[0], cc[1], cc[2], int(float(cc[14])*float(cc[37])), int(float(cc[17])*float(cc[37])), cc[-2] ]
+            x = [cc[0], cc[1], cc[2], int(float(cc[14])*float(cc[37])), int(float(cc[17])*float(cc[37])), cc[-2], cc[3][0]+ cc[3][2:4] ]
             wires_ccs.append(x) 
     #wires_css = sorted(wires_ccs, key= lambda i : int(i[2]))
     wires_ccs = sorted(wires_ccs, key= lambda i : i[2])
@@ -352,66 +352,72 @@ def rms_dis_plot(wt, clfys, direct = 1 ):
     fig = plt.figure(figsize=(12,6))
     lenwt = len(wt)
     lenwth = lenwt//2
+    fembloc = "A00"
     if direct == 1: #0~400
         x_range = range(lenwth)
-        plt.xlim([1,lenwth+1])
+        axlim = [1,lenwth+1]
+        plt.xlim(axlim)
     elif direct == 2:#400 --> 800
         x_range = range(lenwth, lenwt)
-        plt.xlim([lenwth + 1,lenwt+1])
+        axlim = [lenwth + 1,lenwt+1]
+        plt.xlim(axlim)
     elif direct == 3:#400 --> 1
         x_range = range(lenwth)
-        plt.xlim([lenwth+1,1])
+        axlim = [lenwth+1,1]
+        plt.xlim(axlim)
     elif direct == 4:#800 --> 400
         x_range = range(lenwth, lenwt)
-        plt.xlim([lenwt + 1,lenwth+1])
+        axlim = [lenwt + 1,lenwth+1]
+        plt.xlim(axlim)
+
+    if axlim[0] > axlim[1]:
+        x_pos1 = axlim[0] - 100
+        x_pos2 = axlim[0] - 200
+        xoft = 35
+    else:
+        x_pos1 = axlim[0] + 100
+        x_pos2 = axlim[0] + 200
+        xoft = 5
  
     for i in x_range: 
+        if fembloc != wt[i][6]:
+            fembloc = wt[i][6]
+            plt.text (wt[i][2]+xoft, 1850, "%s"%fembloc, fontsize=20 )
+            plt.vlines(wt[i][2], 0, 2000, color='c', linestyles="dotted", linewidth=0.8)
+
         for x in clfys:
             if wt[i][5] in x[0]:
                 plt.bar([wt[i][2]], [wt[i][3]], color = x[1], width = 1)
     plt.ylim([0,2000])
 
-    if x_range[0] > x_range[-1]:
-        x_pos = x_range[0] - 200
-    else:
-        x_pos = x_range[0] + 200
-    plt.text (x_pos+200, 1900, "$\\blacksquare$: %s"%clfys[0][2], color = clfys[0][1], fontsize=16 )
-    plt.text (x_pos+200, 1800, "$\\blacksquare$: %s"%clfys[1][2], color = clfys[1][1], fontsize=16 )
-    plt.text (x_pos+200, 1700, "$\\blacksquare$: %s"%clfys[2][2], color = clfys[2][1], fontsize=16 )
-    plt.text (x_pos+200, 1600, "$\\blacksquare$: %s"%clfys[3][2], color = clfys[3][1], fontsize=16 )
-    plt.text (x_pos+200, 1500, "$\\blacksquare$: %s"%clfys[4][2], color = clfys[4][1], fontsize=16 )
+    plt.text (x_pos1,     1650, "$\\blacksquare$: %s"%clfys[0][2], color = clfys[0][1], fontsize=16 )
+    plt.text (x_pos1,     1550, "$\\blacksquare$: %s"%clfys[1][2], color = clfys[1][1], fontsize=16 )
+    plt.text (x_pos1,     1450, "$\\blacksquare$: %s"%clfys[2][2], color = clfys[2][1], fontsize=16 )
+    plt.text (x_pos2, 1650, "$\\blacksquare$: %s"%clfys[3][2], color = clfys[3][1], fontsize=16 )
+    plt.text (x_pos2, 1550, "$\\blacksquare$: %s"%clfys[4][2], color = clfys[4][1], fontsize=16 )
     plt.title( "%s Plane of APA%d"%(wiretype, apano), fontsize = 20)
     plt.xlabel( "APA Channel Num", fontsize = 20)
     plt.ylabel( "ENC / e$^-$", fontsize = 20)
     plt.tick_params(labelsize=20)
-    plt.grid()
-    plt.tight_layout( rect=[0.05, 0.05, 0.95, 0.95])
+    plt.tight_layout( rect=[0.00, 0.05, 1, 0.95])
     plt.savefig("/Users/shanshangao/Google_Drive_BNL/tmp/pd_tmp/plots/%s_%s_Plane_of_APA%d_direct%d.png"%(t_pat, wiretype, apano, direct))
     plt.close()
 
-
 import matplotlib.pyplot as plt
+clfys =  [[ ["C01","C02","C03","C04","C05","C06"], "m", "Inactive"],
+            [["C07"], "b", "Sticky"],
+            [["C08"], "k", "Open"],
+            [["C09", "C10", "C11"],"r", "ENC > 800e$^-$"],
+            [["C12"], "g", "ENC <= 800e$^-$"] ]
 for apano in range(1,4,1):
     for wiretype in ["U", "V", "X"]:
         wt = wires_sorted ( apa_ccs, apano = apano, wiretype = wiretype)
-        clfys =  [[ ["C01","C02","C03","C04","C05","C06"], "m", "Inactive"],
-                    [["C07"], "b", "Sticky"],
-                    [["C08"], "purple", "Open"],
-                    [["C09", "C10", "C11"],"r", "ENC > 800e$^-$"],
-                    [["C12"], "g", "ENC <= 800e$^-$"] ]
- 
         rms_dis_plot(wt, clfys, direct = 1 )
         rms_dis_plot(wt, clfys, direct = 4 )
         
 for apano in range(4,7,1):
     for wiretype in ["U", "V", "X"]:
         wt = wires_sorted ( apa_ccs, apano = apano, wiretype = wiretype)
-        clfys =  [[ ["C01","C02","C03","C04","C05","C06"], "m", "Inactive"],
-                    [["C07"], "b", "Sticky"],
-                    [["C08"], "purple", "Open"],
-                    [["C09", "C10", "C11"],"r", "ENC > 800e$^-$"],
-                    [["C12"], "g", "ENC <= 800e$^-$"] ]
- 
         rms_dis_plot(wt, clfys, direct = 2 )
         rms_dis_plot(wt, clfys, direct = 3 )
 
