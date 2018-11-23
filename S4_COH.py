@@ -5,7 +5,7 @@ Author: GSS
 Mail: gao.hillhill@gmail.com
 Description: 
 Created Time: 7/15/2016 11:47:39 AM
-Last modified: Thu Sep 27 17:56:59 2018
+Last modified: Sun Sep 30 17:13:06 2018
 """
 
 #defaut setting for scientific caculation
@@ -25,239 +25,12 @@ import math
 import copy
 import sys
 
-def bad_adc_ana ( ccs ):
-    bad_adc_ccs = []
-    for cc in ccs:
-        if cc[25] == "False" :
-            bad_adc_ccs.append(cc)
-    return bad_adc_ccs
-
-def fe900_ana ( ccs ):
-    fe900_ccs = []
-    for cc in ccs:
-        if cc[24] == "False" :
-            fe900_ccs.append(cc)
-    return fe900_ccs
-
-def stuck_ana ( ccs ):
-    stuck_ccs = []
-    for cc in ccs:
-        if float(cc[16]) > 0.95 :
-            continue
-        else:
-            ped = float(cc[10])
-            pedmod64 = ped%64
-            rms = float(cc[11])
-            sfrms = float(cc[14])
-            encratio = (rms/sfrms)  
-            fpg1 = cc[34] 
-            fpg2 = cc[44] 
-            if fpg1 != "None":
-                egain = float(fpg1) 
-                if ( egain >= 100 ) and (egain<= 180 ):
-                    pass
-                elif fpg2 != "None":
-                    egain = float(fpg2) 
-                    if ( egain >= 100 ) and (egain<= 180 ):
-                        pass
-                    else:
-                        egain = 135
-                else:
-                    egain = 135
-            else:
-                egain = 135
-            enc = rms * float(egain)
-            sfenc = sfrms * egain
-            #if ( sfenc > 400) and (( encratio > 1.5) or ( encratio < 0.5)) and ((pedmod64<60) or (pedmod64>15)):
-            if ( sfenc > 400) and (( encratio > 1.5) or ( encratio < 0.5)) :
-                stuck_ccs.append(cc)
-    return stuck_ccs
-
-def inactive_ana ( ccs ):
-    inact_fe_ccs = []
-    for cc in ccs:
-        ped = float(cc[10])
-        pp  = float(cc[17])
-        pn  = float(cc[18])
-        ppa = pp - ped
-        pna = ped-pn
-        if ( ppa < 800 ) and (pna < 300):
-            inact_fe_ccs.append(cc) 
-    return inact_fe_ccs
-
-def open_ana ( ccs, enc_thr = 350 ):
-    open_ccs = []
-    for cc in ccs:
-        rms = float(cc[11])
-        fpg1 = cc[34] 
-        fpg2 = cc[44] 
-        if fpg1 != "None":
-            egain = float(fpg1) 
-            if ( egain >= 100 ) and (egain<= 180 ):
-                pass
-            elif fpg2 != "None":
-                egain = float(fpg2) 
-                if ( egain >= 100 ) and (egain<= 180 ):
-                    pass
-                else:
-                    egain = 135
-            else:
-                egain = 135
-        else:
-            egain = 135
-        enc = rms * float(egain)
-        if (enc < enc_thr) :
-            open_ccs.append(cc) 
-    return open_ccs  
-
-def none_gain_ana ( ccs ):
-    none_gain_ccs = []
-    for cc in ccs:
-        fpg = cc[34] 
-        if fpg == "None":
-            none_gain_ccs.append(cc)
-    return none_gain_ccs
- 
-def big_gain_ana ( ccs, gainmax = 180 ):
-    big_gain_ccs = []
-    for cc in ccs:
-        fpg = cc[34] 
-        if fpg != "None":
-            if ( float(fpg) > 180 ):
-                big_gain_ccs.append(cc)
-    return big_gain_ccs
- 
-def small_gain_ana ( ccs, gainmin = 100 ):
-    small_gain_ccs = []
-    for cc in ccs:
-        fpg = cc[34] 
-        if fpg != "None":
-            if ( float(fpg) < 100 ):
-                small_gain_ccs.append(cc)
-    return small_gain_ccs
-
-def good_classify_ana (ccs):
-    bad_adc_ccs = bad_adc_ana(ccs)
-    for i in bad_adc_ccs:
-        ccs.remove(i)
-    
-    fe900_ccs = fe900_ana(ccs)
-    for i in fe900_ccs:
-        ccs.remove(i)
-
-    inact_fe_ccs = inactive_ana(ccs)
-    for i in inact_fe_ccs:
-        ccs.remove(i)
-    
-    none_gain_ccs = none_gain_ana ( ccs)
-    for i in none_gain_ccs:
-        ccs.remove(i)
-
-    big_gain_ccs = big_gain_ana (ccs, gainmax = 180)
-    for i in big_gain_ccs:
-        ccs.remove(i)
- 
-    small_gain_ccs = small_gain_ana (ccs, gainmin = 90)
-    for i in small_gain_ccs:
-        ccs.remove(i)
- 
-    stuck_ccs = stuck_ana ( ccs )
-    for i in stuck_ccs:
-        ccs.remove(i)
-   
-    open_ccs = open_ana ( ccs, enc_thr = 350)
-    for i in open_ccs:
-        ccs.remove(i)
-  
-    good_ccs = ccs
-    return good_ccs, bad_adc_ccs, fe900_ccs, inact_fe_ccs, none_gain_ccs, big_gain_ccs, small_gain_ccs, stuck_ccs, open_ccs
-
-
-
-def noisechn_ana ( ccs, enc_up = 1000000, enc_down = 2000 ):
-    noisechn_ccs = []
-    for cc in ccs:
-        rms = float(cc[11])
-        fpg1 = cc[34] 
-        fpg2 = cc[44] 
-        if fpg1 != "None":
-            egain = float(fpg1) 
-            if ( egain >= 100 ) and (egain<= 180 ):
-                pass
-            elif fpg2 != "None":
-                egain = float(fpg2) 
-                if ( egain >= 100 ) and (egain<= 180 ):
-                    pass
-                else:
-                    egain = 135
-            else:
-                egain = 135
-        else:
-            egain = 135
-        enc = rms * float(egain)
-
-        if (enc_up > 2000):
-            if (enc > enc_down ):
-                noisechn_ccs.append(cc) 
-        else:
-            if (enc > enc_down ) and (enc < enc_up ):
-                noisechn_ccs.append(cc) 
-
-    return noisechn_ccs  
-
-def wires_ana ( ccs, wire = "U" ):
-    wires_ccs = []
-    for cc in ccs:
-        if (cc[2][0] == wire):
-            wires_ccs.append(cc) 
-    return wires_ccs  
-
-def apa_ana ( ccs, apa = 1 ):
-    apa_ccs = []
-    for cc in ccs:
-        if (int(cc[0][1]) == apa):
-            apa_ccs.append(cc) 
-    return apa_ccs  
-
-def wib_ana ( apa_ccs, wib = 0 ):
-    wib_ccs = []
-    for cc in ccs:
-        if (int(cc[6]) == wib):
-            wib_ccs.append(cc) 
-    return wib_ccs  
-
-def femb_ana ( wib_ccs, femb = 0 ):
-    femb_ccs = []
-    for cc in ccs:
-        if (int(cc[7]) == femb):
-            femb_ccs.append(cc) 
-    return femb_ccs  
-
-def pnum_ana ( ccs, pnum = 0 ): #for number parameter only
-    tmp = []
-    for cc in ccs:
-        tmp.append(cc[pnum])
-    tmp = map(float, tmp)
-    return  tmp 
-
-def paras_ana (ccs):
-    peds =np.array( pnum_ana(ccs, pnum=10) )
-    rmss =np.array( pnum_ana(ccs, pnum=11) )
-    sfrmss =np.array( pnum_ana(ccs, pnum=14) )
-    pps =np.array( pnum_ana(ccs, pnum=17) ) - peds
-    pns =np.array( pnum_ana(ccs, pnum=18) ) - peds
-    fpgs =np.array( pnum_ana(ccs, pnum=34) )
-    inls =np.array( pnum_ana(ccs, pnum=35) )
-    encs = rmss * fpgs
-    sfencs = sfrmss * fpgs
-    return peds, encs, sfencs, fpgs, inls, pps, pns 
-
-
 
 rpath = "/Users/shanshangao/Google_Drive_BNL/tmp/pd_tmp/test_statis/"
-t_pat = "Test015"
+rpath = "/Users/shanshangao/Google_Drive_BNL/tmp/pd_tmp/coh_results_uvx/"
+rpath = "/Users/shanshangao/Google_Drive_BNL/tmp/pd_tmp/coh_results/"
 t_pat = sys.argv[1]
-PCE = t_pat + "_ProtoDUNE_CE_characterization" + ".csv"
+PCE = t_pat + "COH_ProtoDUNE_CE_characterization_summary" + ".csv"
 ppath = rpath + PCE
 ccs = []
 with open(ppath, 'r') as fp:
@@ -268,87 +41,39 @@ with open(ppath, 'r') as fp:
             x.append(i.replace(" ", ""))
         x = x[:-1]
         ccs.append(x)
-ccs_title = ccs[0]
-ccs = ccs[1:]
+cohccs_title = ccs[0]
+cohccs = ccs[1:]
 
-good_ccs, bad_adc_ccs, fe900_ccs, inact_fe_ccs, none_gain_ccs, big_gain_ccs, small_gain_ccs, stuck_ccs, open_ccs = good_classify_ana (ccs)
-
-if (True):
-    noisechn2k_ccs =  noisechn_ana( good_ccs, enc_up = 100000, enc_down = 2000)
-    for i in noisechn2k_ccs:
-        good_ccs.remove(i)
-    
-    noisechn1k_ccs =  noisechn_ana( good_ccs, enc_up = 2000, enc_down = 1000)
-    for i in noisechn1k_ccs:
-        good_ccs.remove(i)
-    
-    noisechn8h_ccs =  noisechn_ana( good_ccs, enc_up = 1000, enc_down = 800)
-    for i in noisechn8h_ccs:
-        good_ccs.remove(i)
-    print "XXXXXXXXXXXXXXXXXXXXXXXX"  
-    print len (bad_adc_ccs     )
-    print len (fe900_ccs       )
-    print len (inact_fe_ccs    )
-    print len (none_gain_ccs   )
-    print len (big_gain_ccs    )
-    print len (small_gain_ccs  )
-    print len (stuck_ccs       )
-    print len (open_ccs        ) 
-    print len (noisechn2k_ccs )
-    print len (noisechn1k_ccs )
-    print len (noisechn8h_ccs )
-    print len (good_ccs        ) 
-    print "XXXXXXXXXXXXXXXXXXXXXXXX"  
 
 if (True):
-#if (False):
-    ###########make noise distributio plot ###################
-    i = ccs_title 
-    c =[["APA no", "Wire", "APA wire no"] + i]
-    all_ccs = [
-        [bad_adc_ccs   , "C01", "ADC Sync Phase Error "],                               
-        [fe900_ccs     , "C02", "Inactive FE ASIC"],                               
-        [inact_fe_ccs  , "C03", "Inactive FE Channels "],                               
-        [none_gain_ccs , "C04", "FE channels fails calibration"],                               
-        [big_gain_ccs  , "C05", "Inverted Gain > 180 e-/bin "],                               
-        [small_gain_ccs, "C06", "Inverted Gain < 90 e-/bin"],                               
-        [stuck_ccs     , "C07", "Channels with signifcant stuck bit"],                               
-        [open_ccs      , "C08", "Broken connection pre FE input"],                               
-        [noisechn2k_ccs, "C09", "ENC > 2000e-"],                               
-        [noisechn1k_ccs, "C10", "1000e- < ENC <= 2000 e- "],
-        [noisechn8h_ccs, "C11", "800e- < ENC <= 1000 e-  "],
-        [good_ccs      , "C12", "Good"],                                 
-        ]
+    cohccs_title  =["APA no", "Wire", "APA wire no"] + cohccs_title  
+    lenapa = len(cohccs)
+    print lenapa
+    for c in range(lenapa):
+        apa_side = (cohccs[c][0][0])
+        apano = int(cohccs[c][0][1])
+        fembloc = int(cohccs[c][0][2:4])
+        wire_type = cohccs[c][2][0]
+        fembwire_no = int(cohccs[c][2][1:3])
+        #set B01 X(U/V)#01 as start, clock-wise wire number
+        if (wire_type == "X" ):
+            w_femb = 48
+        else:
+            w_femb = 40
+        apawireno = ( fembloc -1 ) * w_femb + (w_femb-fembwire_no) + 1
+        apawireinfo = [apano, wire_type , apawireno]
+        cohccs[c] = apawireinfo + cohccs[c] 
     
-    for ccs_x in all_ccs:
-        for i in ccs_x[0]:
-            apa_side = (i[0][0])
-            apano = int(i[0][1])
-            fembloc = int(i[0][2:4])
-            wire_type = i[2][0]
-            fembwire_no = int(i[2][1:3])
-            #set B01 X(U/V)#01 as start, clock-wise wire number
-            if (wire_type == "X" ):
-                w_femb = 48
-            else:
-                w_femb = 40
-            apawireno = ( fembloc -1 ) * w_femb + (w_femb-fembwire_no) + 1
-            apawireinfo = [apano, wire_type , apawireno]
-            b = apawireinfo + i +  [ccs_x[1], ccs_x[2],]
-            c.append(b)
-    
-    apa_ccs_title = c[0]
-    print apa_ccs_title
-    sys.exit()
-    apa_ccs = c[1:]
-    
+    apa_ccs_title = cohccs_title
+    apa_ccs =cohccs 
+     
     def wires_sorted ( apa_ccs, apano = 1, wiretype = "U" ):
         wires_ccs = []
         for cc in apa_ccs:
             if (cc[0] == apano) and (cc[1] == wiretype):
-                x = [cc[0], cc[1], cc[2], int(float(cc[14])*float(cc[37])), int(float(cc[17])*float(cc[37])), cc[-2], cc[3][0]+ cc[3][2:4] ]
+                egain = float(cc[19])
+                x = [cc[0], cc[1], cc[2], int(float(cc[23])*egain), int(float(cc[25])*egain), int(float(cc[27])*egain), cc[21], cc[3][0]+ cc[3][2:4], int(cc[-1]) ]
                 wires_ccs.append(x) 
-        #wires_css = sorted(wires_ccs, key= lambda i : int(i[2]))
         wires_ccs = sorted(wires_ccs, key= lambda i : i[2])
         return wires_ccs  
     
@@ -384,27 +109,54 @@ if (True):
             xoft = 5
      
         for i in x_range: 
-            if fembloc != wt[i][6]:
-                fembloc = wt[i][6]
+            if fembloc != wt[i][7]:
+                fembloc = wt[i][7]
                 plt.text (wt[i][2]+xoft, 1850, "%s"%fembloc, fontsize=20 )
                 plt.vlines(wt[i][2], 0, 2000, color='c', linestyles="dotted", linewidth=0.8)
     
             for x in clfys:
-                if wt[i][5] in x[0]:
-                    plt.bar([wt[i][2]], [wt[i][3]], color = x[1], width = 1)
+                if wt[i][6] in x[0]:
+                    if wt[i][8] >= 4:
+                        #plt.bar([wt[i][2]], [wt[i][3]], color = x[1], width = 1)
+                        plt.bar([wt[i][2]], [wt[i][4]], color = x[1], width = 1)
+                        #plt.bar([wt[i][2]], [wt[i][5]], color = x[1], width = 1)
+                    else:
+                        #plt.bar([wt[i][2]], [wt[i][3]], color = x[1], width = 1)
+                        #if wt[i][3] > 2000:
+                        #    plt.bar([wt[i][2]], 1000, color = 'orange', width = 1)
+                        #else:
+                        #    plt.bar([wt[i][2]], [wt[i][3]//2], color = 'orange', width = 1)
+ 
+                        plt.bar([wt[i][2]], [wt[i][4]], color = x[1], width = 1)
+                        if wt[i][4] > 2000:
+                            plt.bar([wt[i][2]], 1000, color = 'orange', width = 1)
+                        else:
+                            plt.bar([wt[i][2]], [wt[i][4]//2], color = 'orange', width = 1)
+
+                        #plt.bar([wt[i][2]], [wt[i][5]], color = x[1], width = 1)
+                        #if wt[i][5] > 2000:
+                        #    plt.bar([wt[i][2]], 1000, color = 'orange', width = 1)
+                        #else:
+                        #    plt.bar([wt[i][2]], [wt[i][5]//2], color = 'orange', width = 1)
+ 
         plt.ylim([0,2000])
     
+        #istatus = "RawCOH"
+        istatus = "PostCOH"
+        #istatus = "COHCOH"
         plt.text (x_pos1,     1650, "$\\blacksquare$: %s"%clfys[0][2], color = clfys[0][1], fontsize=16 )
         plt.text (x_pos1,     1550, "$\\blacksquare$: %s"%clfys[1][2], color = clfys[1][1], fontsize=16 )
         plt.text (x_pos1,     1450, "$\\blacksquare$: %s"%clfys[2][2], color = clfys[2][1], fontsize=16 )
         plt.text (x_pos2, 1650, "$\\blacksquare$: %s"%clfys[3][2], color = clfys[3][1], fontsize=16 )
         plt.text (x_pos2, 1550, "$\\blacksquare$: %s"%clfys[4][2], color = clfys[4][1], fontsize=16 )
+        plt.text (x_pos2, 1450, "$\\blacksquare$: No Flitering", color = "orange", fontsize=16 )
         plt.title( "%s Plane of APA%d"%(wiretype, apano), fontsize = 20)
         plt.xlabel( "APA Channel Num", fontsize = 20)
         plt.ylabel( "ENC / e$^-$", fontsize = 20)
         plt.tick_params(labelsize=20)
         plt.tight_layout( rect=[0.00, 0.05, 1, 0.95])
-        plt.savefig("/Users/shanshangao/Google_Drive_BNL/tmp/pd_tmp/plots/%s_%s_Plane_of_APA%d_direct%d.png"%(t_pat, wiretype, apano, direct))
+        #plt.savefig("/Users/shanshangao/Google_Drive_BNL/tmp/pd_tmp/plots_uvx/%s_%s_%s_Plane_of_APA%d_direct%d.png"%(istatus,t_pat, wiretype, apano, direct))
+        plt.savefig("/Users/shanshangao/Google_Drive_BNL/tmp/pd_tmp/plots/%s_%s_%s_Plane_of_APA%d_direct%d.png"%(istatus,t_pat, wiretype, apano, direct))
         plt.close()
     
     import matplotlib.pyplot as plt
@@ -424,6 +176,7 @@ if (True):
             wt = wires_sorted ( apa_ccs, apano = apano, wiretype = wiretype)
             rms_dis_plot(wt, clfys, direct = 2 )
             rms_dis_plot(wt, clfys, direct = 3 )
+    
 
 
 #if (True):
