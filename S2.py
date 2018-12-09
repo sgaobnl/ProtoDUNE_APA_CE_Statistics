@@ -5,7 +5,7 @@ Author: GSS
 Mail: gao.hillhill@gmail.com
 Description: 
 Created Time: 7/15/2016 11:47:39 AM
-Last modified: Thu Sep 27 17:56:59 2018
+Last modified: Sun Dec  9 14:05:16 2018
 """
 
 #defaut setting for scientific caculation
@@ -339,9 +339,124 @@ if (True):
     
     apa_ccs_title = c[0]
     print apa_ccs_title
-    sys.exit()
+#    sys.exit()
     apa_ccs = c[1:]
+
+
+    def apa_sorted ( apa_ccs, apano = 1):
+        wires_ccs = []
+        for cc in apa_ccs:
+            if (cc[0] == apano) :
+                x = [cc[0], cc[1], cc[2], int(float(cc[14])*float(cc[37])), int(float(cc[17])*float(cc[37])), cc[-2], cc[3][0]+ cc[3][2:4] ]
+                wires_ccs.append(x) 
+        wires_ccs = sorted(wires_ccs, key= lambda i : i[2])
+        return wires_ccs  
     
+    def aparms_dis_plot(wt, clfys, sf = True ):
+        fig = plt.figure(figsize=(12,6))
+        lenwt = len(wt)
+        
+        xchn = []
+        xenc = []
+        xenc800 =[]
+        xsfenc = []
+        xsfenc800 =[]
+        vchn = []
+        venc = []
+        venc800 =[]
+        vsfenc = []
+        vsfenc800 =[]
+        uchn = []
+        uenc = []
+        uenc800 =[]
+        usfenc = []
+        usfenc800 =[]
+ 
+        for wi in wt:
+            if (wi[1] == "X" ):
+                xchn.append(wi[2])
+                xenc.append(wi[3])
+                xsfenc.append(wi[4])
+                if (wi[5] == "C12" ):
+                    xenc800.append(wi[3])
+                    xsfenc800.append(wi[4])
+            elif (wi[1] == "V" ):
+                vchn.append(wi[2] + 960)
+                venc.append(wi[3])
+                vsfenc.append(wi[4])
+                if (wi[5] == "C12" ):
+                    venc800.append(wi[3])
+                    vsfenc800.append(wi[4])
+            elif (wi[1] == "U" ):
+                uchn.append(wi[2] + 960 + 800)
+                uenc.append(wi[3])
+                usfenc.append(wi[4])
+                if (wi[5] == "C12" ):
+                    uenc800.append(wi[3])
+                    usfenc800.append(wi[4])
+
+        xencmean = np.mean(xenc800)
+        xencstd  = np.std (xenc800)
+        vencmean = np.mean(venc800)
+        vencstd  = np.std (venc800)
+        uencmean = np.mean(uenc800)
+        uencstd  = np.std (uenc800)
+
+        xsfencmean = np.mean(xsfenc800)
+        xsfencstd  = np.std (xsfenc800)
+        vsfencmean = np.mean(vsfenc800)
+        vsfencstd  = np.std (vsfenc800)
+        usfencmean = np.mean(usfenc800)
+        usfencstd  = np.std (usfenc800)
+ 
+        if (sf == True):
+            plt.scatter(xchn,xsfenc, marker = '.', color = 'g')
+            plt.scatter(vchn,vsfenc, marker = '.', color = 'b')
+            plt.scatter(uchn,usfenc, marker = '.', color = 'r')
+
+            plt.plot(xchn,xsfenc, color = 'g', label = "X Plane, ENC = %d $\pm$ %d e$^-$" %(xsfencmean, xsfencstd))
+            plt.plot(vchn,vsfenc, color = 'b', label = "V Plane, ENC = %d $\pm$ %d e$^-$" %(vsfencmean, vsfencstd))
+            plt.plot(uchn,usfenc, color = 'r', label = "U Plane, ENC = %d $\pm$ %d e$^-$" %(usfencmean, usfencstd))
+
+        else:
+            plt.scatter(xchn,xenc, marker = '.', color = 'g')
+            plt.scatter(vchn,venc, marker = '.', color = 'b')
+            plt.scatter(uchn,uenc, marker = '.', color = 'r')
+
+            plt.plot(xchn,xenc, color = 'g', label = "X Plane, ENC = %d $\pm$ %d e$^-$" %(xencmean, xencstd))
+            plt.plot(vchn,venc, color = 'b', label = "V Plane, ENC = %d $\pm$ %d e$^-$" %(vencmean, vencstd))
+            plt.plot(uchn,uenc, color = 'r', label = "U Plane, ENC = %d $\pm$ %d e$^-$" %(uencmean, uencstd))
+
+ 
+        plt.ylim([0,2000])
+        plt.xlim([0,2560])
+    
+        if (sf == True):
+            plt.title( "APA%d Noise Distribution(Raw data after ADC stuck code removal)"%(apano), fontsize = 20)
+        else:
+            plt.title( "APA%d Noise Distribution(Raw data before ADC stuck code removal)"%(apano), fontsize = 20)
+        plt.xlabel( "APA Channel Num", fontsize = 20)
+        plt.ylabel( "ENC / e$^-$", fontsize = 20)
+        plt.tick_params(labelsize=20)
+        plt.tight_layout( rect=[0.00, 0.05, 1, 0.95])
+        plt.legend (loc = "upper right", fontsize=16)
+        if (sf == True):
+            plt.savefig("/Users/shanshangao/Google_Drive_BNL/tmp/pd_tmp/xx/sf_%s_of_APA%d.png"%(t_pat, apano))
+        else:
+            plt.savefig("/Users/shanshangao/Google_Drive_BNL/tmp/pd_tmp/xx/%s_of_APA%d.png"%(t_pat, apano))
+        plt.close()
+    
+    import matplotlib.pyplot as plt
+    clfys =  [[ ["C01","C02","C03","C04","C05","C06"], "m", "Inactive"],
+                [["C07"], "b", "Sticky"],
+                [["C08"], "k", "Open"],
+                [["C09", "C10", "C11"],"r", "ENC > 800e$^-$"],
+                [["C12"], "g", "ENC <= 800e$^-$"] ]
+    for apano in range(1,7,1):
+        wt = apa_sorted ( apa_ccs, apano = apano)
+        aparms_dis_plot(wt, clfys, sf = True )
+
+if (False):
     def wires_sorted ( apa_ccs, apano = 1, wiretype = "U" ):
         wires_ccs = []
         for cc in apa_ccs:
