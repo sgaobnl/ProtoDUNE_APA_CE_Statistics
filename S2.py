@@ -5,7 +5,7 @@ Author: GSS
 Mail: gao.hillhill@gmail.com
 Description: 
 Created Time: 7/15/2016 11:47:39 AM
-Last modified: Sun Dec  9 14:05:16 2018
+Last modified: Wed Feb  6 17:37:50 2019
 """
 
 #defaut setting for scientific caculation
@@ -255,8 +255,8 @@ def paras_ana (ccs):
 
 
 rpath = "/Users/shanshangao/Google_Drive_BNL/tmp/pd_tmp/test_statis/"
-t_pat = "Test015"
-t_pat = sys.argv[1]
+t_pat = "Test018"
+#t_pat = sys.argv[1]
 PCE = t_pat + "_ProtoDUNE_CE_characterization" + ".csv"
 ppath = rpath + PCE
 ccs = []
@@ -541,8 +541,8 @@ if (False):
             rms_dis_plot(wt, clfys, direct = 3 )
 
 
-#if (True):
-if (False):
+if (True):
+#if (False):
     ###########export results ###################
     i = ccs_title 
     b =  [i[0], i[1],i[2], i[6], i[7], i[8], i[9], i[21], i[22], i[10], "ENC \ e-", i[11], i[14],  i[16], "Pulse Postive Amplitude",  "Pulse Negative Amplitude", i[34], i[35], "Code", "Code Description"]

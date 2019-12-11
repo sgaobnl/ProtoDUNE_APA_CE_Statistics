@@ -5,7 +5,7 @@ Author: GSS
 Mail: gao.hillhill@gmail.com
 Description: 
 Created Time: 7/15/2016 11:47:39 AM
-Last modified: Sun Sep 23 11:32:49 2018
+Last modified: Mon Dec  9 13:37:50 2019
 """
 
 #defaut setting for scientific caculation
@@ -33,9 +33,11 @@ from Abnormals import Abnormals
 #                "09_17_2018_run02rms_run02fpg_run01asi.csv",\ #900mV, 0xFF0xFF
 #                ] 
 
-runfpgs = [["09_23_2018", "03" ],  ["09_23_2018", "02" ],  ["09_23_2018", "01" ],  ["09_17_2018", "01" ],  ["09_17_2018", "02" ]] #date, run_fpg_no
+#runfpgs = [["09_23_2018", "03" ],  ["09_23_2018", "02" ],  ["09_23_2018", "01" ],  ["09_17_2018", "01" ],  ["09_17_2018", "02" ]] #date, run_fpg_no
+runfpgs = [["1l_06_2019", "01" ],  ] #date, run_fpg_no
 BadFEs, BadADCs = Abnormals()
-rpath = "/Users/shanshangao/Google_Drive_BNL/tmp/pd_tmp/statistics_csv/"
+#rpath = "/Users/shanshangao/Google_Drive_BNL/tmp/pd_tmp/statistics_csv/"
+rpath = '''/Users/shanshangao/Documents/tmp/PD/'''
 
 index_f = "tests_index.csv"
 tindexs = []
@@ -51,8 +53,9 @@ tindexs = tindexs [1:]
 
 tmp = []
 for y in tindexs:
-    if ( (int(y[13][0]) > 0) and (int(y[14][0]) > 0) and (int(y[15][0]) > 0) and \
-         (int(y[16][0]) > 0) and (int(y[17][0]) > 0) and (int(y[18][0]) > 0)  ) and (y[0] == "#23"):
+#    if ( (int(y[13][0]) > 0) and (int(y[14][0]) > 0) and (int(y[15][0]) > 0) and \
+#         (int(y[16][0]) > 0) and (int(y[17][0]) > 0) and (int(y[18][0]) > 0)  ) and (y[0] == "#39"):
+    if  (y[0] == "#39"):
         t_pat = "Test" + format( int(y[0][1:]), "03d")
         if "200" in y[9]:
             bad_fe_flg = True
@@ -64,6 +67,7 @@ for y in tindexs:
             bad_adc_flg = False
         tmp.append ([t_pat, bad_fe_flg, bad_adc_flg])
 validtests = tmp
+print validtests
 
 for validtest in validtests:
 #for validtest in [["Test004", True, True]]:
